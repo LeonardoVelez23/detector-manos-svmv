@@ -27,13 +27,43 @@
             "styles": [
               "src/styles.css"
             ]
-          }
+          },
+          "configurations": {
+            "production": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.production.ts"
+                }
+              ],
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "namedChunks": false,
+              "extractLicenses": true
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
             "buildTarget": "detector-angular-frontend:build"
-          }
+          },
+          "configurations": {
+            "production": {
+              "buildTarget": "detector-angular-frontend:build:production"
+            },
+            "development": {
+              "buildTarget": "detector-angular-frontend:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
         }
       }
     }

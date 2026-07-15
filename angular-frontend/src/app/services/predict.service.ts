@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface PredictResponse {
   classification?: string;
@@ -11,7 +12,7 @@ export interface PredictResponse {
 
 @Injectable({ providedIn: 'root' })
 export class PredictService {
-  private readonly gatewayUrl = 'http://localhost:5000/predict';
+  private readonly gatewayUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
