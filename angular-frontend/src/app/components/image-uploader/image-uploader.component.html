@@ -41,8 +41,8 @@
         (dragleave)="onDragLeave()"
         (drop)="onDrop($event)"
         (click)="fileInput.click()">
-        <div class="fs-1 mb-2">📥</div>
-        <p class="mb-1 fw-medium text-dark">Arrastra una imagen aquí</p>
+        <div class="upload-icon mb-2">📥</div>
+        <p class="mb-1 fw-semibold text-dark">Arrastra una imagen aquí</p>
         <p class="text-muted small mb-3">o haz clic para seleccionar desde tu dispositivo</p>
         <button class="btn btn-sm btn-outline-success px-4 fw-semibold">Buscar Archivo</button>
         <input 
@@ -57,30 +57,32 @@
 
     <!-- Área URL -->
     <div *ngIf="activeTab === 'url'">
-      <div class="p-4 bg-light rounded text-center border">
-        <div class="fs-1 mb-2">🔗</div>
-        <p class="fw-medium mb-3">Ingresa la URL directa de la imagen</p>
+      <div class="p-4 bg-light rounded text-center border" style="border-radius: 14px !important;">
+        <div class="upload-icon mb-2">🔗</div>
+        <p class="fw-semibold mb-3">Ingresa la URL directa de la imagen</p>
         <div class="input-group">
           <input 
             type="url" 
-            class="form-control" 
+            class="form-control px-3" 
+            style="border-radius: 12px 0 0 12px !important;"
             placeholder="https://ejemplo.com/imagen.jpg" 
             [(ngModel)]="imageUrl"
             (keyup.enter)="onUrlLoaded()" />
-          <button class="btn btn-success fw-semibold px-4" (click)="onUrlLoaded()">Cargar</button>
+          <button class="btn btn-success fw-semibold px-4" style="border-radius: 0 12px 12px 0 !important;" (click)="onUrlLoaded()">Cargar</button>
         </div>
       </div>
     </div>
 
     <!-- Área Cámara Web -->
     <div *ngIf="activeTab === 'webcam'">
-      <div class="p-3 bg-light rounded text-center border">
-        <div *ngIf="webcamActive" class="ratio ratio-4x3 bg-dark rounded mb-3 overflow-hidden shadow-sm">
+      <div class="p-3 bg-light rounded text-center border" style="border-radius: 14px !important;">
+        <div *ngIf="webcamActive" class="webcam-visor ratio ratio-4x3 bg-dark mb-3 shadow-sm">
+          <div class="camera-dot"></div>
           <video #videoElement autoplay playsinline muted></video>
         </div>
         <div *ngIf="!webcamActive" class="py-5 text-muted">
-          <div class="fs-1 mb-2">📷</div>
-          <p class="mb-3">La cámara web está inactiva</p>
+          <div class="upload-icon mb-2">📷</div>
+          <p class="mb-3 fw-semibold">La cámara web está inactiva</p>
           <button class="btn btn-success fw-semibold px-4" (click)="startWebcam()">Iniciar Cámara</button>
         </div>
         <div *ngIf="webcamActive" class="d-flex gap-2 justify-content-center">
