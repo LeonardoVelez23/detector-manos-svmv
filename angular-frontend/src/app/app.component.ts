@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PredictService, PredictResponse } from './services/predict.service';
+import { PredictService, PredictResponse, HistoricalStats } from './services/predict.service';
 import { HeaderComponent } from './components/header/header.component';
 import { ImageUploaderComponent, ImageReadyEvent } from './components/image-uploader/image-uploader.component';
 import { PredictionResultComponent, FeedbackEvent } from './components/prediction-result/prediction-result.component';
@@ -19,19 +19,36 @@ import { SessionStatsComponent, HistoryItem } from './components/session-stats/s
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   // Estado global y carga
   loading = false;
   error = '';
   result: PredictResponse | null = null;
   sourceInfo = '';
 
-  // Estadísticas globales e Historial de Sesión
+  // Historial de Sesión local
   history: HistoryItem[] = [];
-  processedCount = 0;
-  lastConfidence = '-';
+
+  // Estadísticas históricas de la base de datos
+  historicalStats: HistoricalStats | null = null;
 
   constructor(private predictService: PredictService) {}
+
+  ngOnInit(): void {
+    this.loadStats();
+  }
+
+  // Carga las estadísticas acumuladas desde SQLite
+  loadStats(): void {
+    this.predictService.getStats().subscribe({
+      next: (stats) => {
+        this.historicalStats = stats;
+      },
+      error: (err) => {
+        console.error('Error cargando estadísticas históricas:', err);
+      }
+    });
+  }
 
   // Orquesta la predicción cuando el ImageUploader emite los datos de imagen listos
   onPredict(event: ImageReadyEvent): void {
@@ -53,13 +70,11 @@ export class AppComponent {
         }
 
         this.result = res;
+        this.loadStats(); // Recargar estadísticas de SQLite para actualizar el total
 
-        // Añadir a estadísticas e historial si la clasificación es exitosa
+        // Añadir a historial local si la clasificación es exitosa
         if (res.classification) {
           const confidencePct = res.confidence ? Math.round(res.confidence * 100) : 0;
-          this.processedCount++;
-          this.lastConfidence = `${confidencePct}%`;
-
           this.history.unshift({
             time: new Date().toLocaleTimeString('es-ES'),
             source: this.sourceInfo,
@@ -76,13 +91,19 @@ export class AppComponent {
     });
   }
 
-  // Recibe la retroalimentación enviada por el PredictionResultComponent
+  // Recibe la retroalimentación enviada por el PredictionResultComponent y la persiste en SQLite
   onFeedback(event: FeedbackEvent): void {
-    console.log('Retroalimentación global recibida en el padre:', {
-      isCorrect: event.isCorrect,
-      manualLabel: event.manualLabel,
-      imageSource: this.sourceInfo
-    });
+    if (this.result && this.result.id) {
+      this.predictService.sendFeedback(this.result.id, event.isCorrect, event.manualLabel).subscribe({
+        next: () => {
+          console.log('Feedback guardado en base de datos.');
+          this.loadStats(); // Recargar estadísticas de SQLite para actualizar la tasa de precisión
+        },
+        error: (err) => {
+          console.error('Error guardando feedback:', err);
+        }
+      });
+    }
   }
 
   // Resetea el resultado de la predicción cuando se limpia el cargador

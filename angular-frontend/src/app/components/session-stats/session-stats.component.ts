@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HistoricalStats } from '../../services/predict.service';
 
 export interface HistoryItem {
   time: string;
@@ -18,12 +19,11 @@ export interface HistoryItem {
       transition: background-color 0.2s ease;
     }
     .list-group-item:hover {
-      background-color: #f8fafc;
+      background-color: rgba(255, 255, 255, 0.02) !important;
     }
   `]
 })
 export class SessionStatsComponent {
-  @Input() processedCount = 0;
-  @Input() lastConfidence = '-';
+  @Input() stats: HistoricalStats | null = null;
   @Input() history: HistoryItem[] = [];
 }

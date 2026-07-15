@@ -1,30 +1,62 @@
 <!-- Tarjeta de Estadísticas de Sesión -->
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
-    <h2 class="card-title h5 fw-bold text-secondary">Estadísticas de Sesión</h2>
+    <h2 class="card-title h5 fw-bold text-secondary">Estadísticas Históricas</h2>
   </div>
   <div class="card-body p-4 pt-2">
-    <div class="row text-center g-3">
+    <!-- Fila Principal: Totales y Precisión -->
+    <div class="row text-center g-3 mb-4">
       <div class="col-6">
         <div class="p-3 bg-light rounded-3 shadow-inner" style="background: linear-gradient(180deg, #1f2937 0%, #111827 100%); border: 1px solid #374151 !important;">
-          <span class="d-block text-uppercase fw-bold text-muted mb-1" style="font-size: 0.75rem; letter-spacing: 0.05em;">Procesadas</span>
-          <span class="d-block fw-black text-success" style="font-size: 2.25rem; line-height: 1; font-weight: 900;">{{ processedCount }}</span>
+          <span class="d-block text-uppercase fw-bold text-muted mb-1" style="font-size: 0.72rem; letter-spacing: 0.05em;">Total Inferencia</span>
+          <span class="d-block fw-black text-success animate-fade-up" style="font-size: 2.25rem; line-height: 1; font-weight: 900;">
+            {{ stats ? stats.total : 0 }}
+          </span>
         </div>
       </div>
       <div class="col-6">
         <div class="p-3 bg-light rounded-3 shadow-inner" style="background: linear-gradient(180deg, #1f2937 0%, #111827 100%); border: 1px solid #374151 !important;">
-          <span class="d-block text-uppercase fw-bold text-muted mb-1" style="font-size: 0.75rem; letter-spacing: 0.05em;">Última Confianza</span>
-          <span class="d-block fw-black text-success" style="font-size: 2.25rem; line-height: 1; font-weight: 900;">{{ lastConfidence }}</span>
+          <span class="d-block text-uppercase fw-bold text-muted mb-1" style="font-size: 0.72rem; letter-spacing: 0.05em;">Precisión IA</span>
+          <span class="d-block fw-black text-success animate-fade-up" style="font-size: 2.25rem; line-height: 1; font-weight: 900;">
+            {{ stats ? stats.accuracy : '0%' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Desglose por Tipo de Mano -->
+    <div *ngIf="stats" class="p-3 rounded border border-secondary border-opacity-10 bg-dark" style="background-color: rgba(31, 41, 55, 0.4) !important;">
+      <span class="d-block text-muted small fw-bold text-uppercase mb-2 text-center" style="letter-spacing: 0.05em; font-size: 0.7rem;">
+        Distribución de Clases
+      </span>
+      <div class="d-flex justify-content-between align-items-center small px-1">
+        <div class="d-flex align-items-center gap-1">
+          <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 0.72rem; background-color: rgba(16, 185, 129, 0.1);">
+            🖐️ Abiertas
+          </span>
+          <span class="fw-bold text-white">{{ stats.class_counts.Abierta }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-1">
+          <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle px-2 py-1" style="font-size: 0.72rem; background-color: rgba(79, 70, 229, 0.1);">
+            ✊ Cerradas
+          </span>
+          <span class="fw-bold text-white">{{ stats.class_counts.Cerrada }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-1">
+          <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle px-2 py-1" style="font-size: 0.72rem; background-color: rgba(245, 158, 11, 0.1);">
+            ⚠️ Indet.
+          </span>
+          <span class="fw-bold text-white">{{ stats.class_counts['No seguro'] }}</span>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Tarjeta de Historial -->
+<!-- Tarjeta de Historial Local -->
 <div *ngIf="history.length > 0" class="card border-0 shadow-sm animate-fade-up">
   <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
-    <h2 class="card-title h5 fw-bold text-secondary">Historial Reciente</h2>
+    <h2 class="card-title h5 fw-bold text-secondary">Historial de Sesión</h2>
   </div>
   <div class="card-body p-4 pt-2">
     <div class="list-group list-group-flush rounded shadow-sm border overflow-auto" style="max-height: 250px;">

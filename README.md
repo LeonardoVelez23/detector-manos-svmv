@@ -3,8 +3,8 @@
 Este proyecto es una aplicación web interactiva para la detección y clasificación del estado de las manos (Abierta o Cerrada) utilizando inteligencia artificial.
 
 La arquitectura en esta rama se compone de:
-1. **Backend (API de Inferencia):** Construido en Python con **Flask**, utilizando **TensorFlow/Keras** para ejecutar inferencias con el modelo **MobileNetV2**.
-2. **Frontend:** Una interfaz de usuario moderna de una sola página construida con **Angular 19** y estilizada mediante **Bootstrap 5**.
+1. **Backend (API de Inferencia):** Construido en Python con **Flask**, utilizando **TensorFlow/Keras** para ejecutar inferencias con el modelo **MobileNetV2** nativo (`.keras`).
+2. **Frontend:** Una interfaz de usuario moderna de una sola página construida con **Angular 19** y estilizada mediante **Bootstrap 5** (Diseño Premium en Modo Oscuro).
 
 ---
 
@@ -13,8 +13,8 @@ La arquitectura en esta rama se compone de:
 - **Arrastrar y Soltar (Drag & Drop):** Permite subir archivos de imagen locales arrastrándolos directamente a la interfaz.
 - **Predicción desde URL:** Puedes ingresar enlaces directos de imágenes de internet.
 - **Cámara Web en Tiempo Real:** Permite encender tu webcam y tomar una foto en vivo para analizarla al instante.
-- **Historial y Estadísticas:** Muestra un registro en memoria de las predicciones procesadas y el nivel de confianza de cada una.
-- **Sistema de Feedback:** Los usuarios pueden retroalimentar si la clasificación fue correcta o incorrecta (e ingresar la clasificación manual en caso de error).
+- **Historial y Estadísticas de BD:** Muestra la tasa de precisión de la IA y el desglose de conteos directamente desde la base de datos de manera persistente.
+- **Sistema de Feedback:** Los usuarios pueden calificar (Sí/No) si la predicción fue acertada y enviar correcciones en caliente que se registran de forma permanente.
 
 ---
 
@@ -26,7 +26,7 @@ La arquitectura en esta rama se compone de:
 
 ---
 
-## Instrucciones de Inicio rápido
+## Instrucciones de Inicio Rápido
 
 Sigue estos pasos en dos terminales separadas para iniciar la aplicación:
 
@@ -42,7 +42,7 @@ source venv/bin/activate
 
 # 3. Actualizar pip e instalar dependencias
 pip install --upgrade pip
-pip install flask flask-cors opencv-python-headless numpy tensorflow scikit-learn
+pip install flask flask-cors opencv-python-headless numpy tensorflow scikit-learn psycopg2-binary
 
 # 4. Iniciar la API
 python app.py
@@ -67,8 +67,21 @@ El servidor frontend estará disponible en **`http://localhost:4200/`** y abrir�
 
 ---
 
+## Base de Datos (Persistencia Híbrida)
+
+El backend soporta de forma automática dos bases de datos:
+* **SQLite (Local por defecto):** Si ejecutas la aplicación de forma normal sin configuraciones previas, se creará un archivo `predictions.db` en la raíz para guardar localmente las estadísticas y el feedback.
+* **PostgreSQL (Supabase en la nube):** Para desplegar la base de datos en Supabase, simplemente expón la variable de entorno `DATABASE_URL` con tu connection string de Supabase antes de iniciar la aplicación:
+  ```bash
+  export DATABASE_URL="postgresql://postgres.xxxxx:password@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require"
+  python app.py
+  ```
+  El servidor detectará la variable y creará/migrará automáticamente las tablas en Supabase.
+
+---
+
 ## Mapeo del Modelo
-El modelo utiliza la arquitectura **MobileNetV2** preentrenada y cargada mediante pickle (`mobilenet_manos_model.p`). Las clases de salida son:
+El modelo utiliza la arquitectura **MobileNetV2** preentrenada y cargada nativamente (`mobilenet_manos_model.keras`). Las clases de salida son:
 - `0`: Mano Abierta
 - `1`: Mano Cerrada
 - Confianza `< 60%`: Indeterminado / No seguro (solicita tomar otra foto con mejor luz).

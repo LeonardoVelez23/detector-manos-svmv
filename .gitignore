@@ -11,6 +11,9 @@ angular-frontend/node_modules/
 angular-frontend/dist/
 angular-frontend/.angular/
 
+# Base de datos local
+predictions.db
+
 # IDE and OS files
 .vscode/
 .DS_Store
