@@ -25,6 +25,7 @@ try:
 except Exception as e:
     print("Dummy predict failed, no problem:", e)
 
+
 # Preprocesamiento EXACTO para MobileNet
 def extract_features(image_path: str) -> np.ndarray:
     # 1. Leer imagen en color BGR
@@ -36,12 +37,12 @@ def extract_features(image_path: str) -> np.ndarray:
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     # 3. Redimensionar a (224, 224) para MobileNet
-    img = cv2.resize(img, (224, 224))   
-    
+    img = cv2.resize(img, (224, 224))
+
     # 4. Preprocesamiento específico de MobileNetV2 (-1 a 1)
-    img_array = np.expand_dims(img, axis=0) # Shape: (1, 224, 224, 3)
+    img_array = np.expand_dims(img, axis=0)  # Shape: (1, 224, 224, 3)
     img_preprocessed = preprocess_input(img_array)
-    
+
     return img_preprocessed
 
 # --- CONFIGURACIÓN Y FUNCIONES DE BASE DE DATOS (Soporte Híbrido: SQLite y PostgreSQL/Supabase) ---
@@ -218,11 +219,11 @@ def predict():
             image_url = request.form["image_url"].strip()
             # Añadir headers para simular un navegador real
             req = urllib.request.Request(
-                image_url, 
-                data=None, 
+                image_url,
+                data=None,
                 headers={
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-                }
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                },
             )
             ext = os.path.splitext(image_url)[1].lower()
             if ext not in [".jpg", ".jpeg", ".png", ".webp", ".bmp"]:
@@ -277,9 +278,13 @@ def predict():
             "confidence": conf
         })
 
+    try:
+        result = predict_from_path(path)
+        return jsonify(result)
     except Exception as e:
         print("ERROR EN /predict:", e)
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)

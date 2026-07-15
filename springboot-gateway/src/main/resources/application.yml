@@ -1,0 +1,6 @@
+server:
+  port: 8080
+
+python:
+  inference:
+    base-url: http://localhost:5000
