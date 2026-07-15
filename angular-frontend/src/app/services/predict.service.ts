@@ -27,7 +27,7 @@ export class PredictService {
   private readonly feedbackUrl = this.gatewayUrl.replace('/predict', '/feedback');
   private readonly statsUrl = this.gatewayUrl.replace('/predict', '/stats');
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
   predictByFile(file: File): Observable<PredictResponse> {
     const formData = new FormData();

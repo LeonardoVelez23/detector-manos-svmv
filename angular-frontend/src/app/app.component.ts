@@ -32,7 +32,7 @@ export class AppComponent implements OnInit {
   // Estadísticas históricas de la base de datos
   historicalStats: HistoricalStats | null = null;
 
-  constructor(private predictService: PredictService) {}
+  constructor(private readonly predictService: PredictService) {}
 
   ngOnInit(): void {
     this.loadStats();
@@ -93,7 +93,7 @@ export class AppComponent implements OnInit {
 
   // Recibe la retroalimentación enviada por el PredictionResultComponent y la persiste en SQLite
   onFeedback(event: FeedbackEvent): void {
-    if (this.result && this.result.id) {
+    if (this.result?.id) {
       this.predictService.sendFeedback(this.result.id, event.isCorrect, event.manualLabel).subscribe({
         next: () => {
           console.log('Feedback guardado en base de datos.');

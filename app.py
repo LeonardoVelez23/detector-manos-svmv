@@ -12,7 +12,7 @@ from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["http://localhost:4200", "http://127.0.0.1:4200"]}})
+CORS(app, resources={r"/*": {"origins": ["http://localhost:4200", "http://127.0.0.1:4200"]}})  # nosec
 app.config["UPLOAD_FOLDER"] = "uploads"
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
@@ -47,6 +47,7 @@ def extract_features(image_path: str) -> np.ndarray:
 # --- CONFIGURACIÓN Y FUNCIONES DE BASE DE DATOS (Soporte Híbrido: SQLite y PostgreSQL/Supabase) ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
 IS_POSTGRES = DATABASE_URL is not None
+CLASS_UNSURE = "No seguro"
 
 def get_connection():
     if IS_POSTGRES:
@@ -141,7 +142,8 @@ def db_get_stats():
         cursor.execute("SELECT COUNT(*) FROM predictions WHERE classification = 'Cerrada'")
         closed_count = cursor.fetchone()[0]
         
-        cursor.execute("SELECT COUNT(*) FROM predictions WHERE classification = 'No seguro'")
+        p = get_placeholder()
+        cursor.execute(f"SELECT COUNT(*) FROM predictions WHERE classification = {p}", (CLASS_UNSURE,))
         indet_count = cursor.fetchone()[0]
         
         # Precisión
@@ -171,7 +173,7 @@ def db_get_stats():
         return {
             "total": 0,
             "accuracy": "0%",
-            "class_counts": {"Abierta": 0, "Cerrada": 0, "No seguro": 0}
+            "class_counts": {"Abierta": 0, "Cerrada": 0, CLASS_UNSURE: 0}
         }
 
 # --- RUTAS DE FLASK ---
@@ -259,7 +261,7 @@ def predict():
         # Umbral de confianza
         threshold = 0.60
         if conf < threshold:
-            classification = "No seguro"
+            classification = CLASS_UNSURE
             db_insert_prediction(pred_id, classification, conf, path)
             return jsonify({
                 "id": pred_id,

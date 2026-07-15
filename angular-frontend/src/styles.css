@@ -69,7 +69,7 @@ h1, h2, h3, h4, h5, h6, .fw-black {
 
 .btn-danger {
   background-color: #dc2626 !important; /* Fallback for accessibility/contrast linter */
-  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+  background-image: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
   border: none !important;
   color: #ffffff !important;
 }
