@@ -1,3 +1,17 @@
-venv/*
-__pycache__
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
 *.egg-info/
+uploads/*
+!uploads/.gitkeep
+
+# Angular files
+angular-frontend/node_modules/
+angular-frontend/dist/
+angular-frontend/.angular/
+
+# IDE and OS files
+.vscode/
+.DS_Store
+*.log
