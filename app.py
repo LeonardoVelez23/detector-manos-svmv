@@ -14,9 +14,8 @@ CORS(app)
 app.config["UPLOAD_FOLDER"] = "uploads"
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
-# Cargar el modelo MobileNet .p
-with open("mobilenet_manos_model.p", "rb") as f:
-    modelo = pickle.load(f)
+# Cargar el modelo MobileNet nativo de Keras (.keras)
+modelo = tf.keras.models.load_model("mobilenet_manos_model.keras")
 
 # Inicializar un dummy predict para forzar la carga del grafo en el hilo principal
 try:
