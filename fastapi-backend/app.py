@@ -1,20 +1,48 @@
-from flask import Flask, render_template, request, jsonify
+from fastapi import FastAPI, File, UploadFile, Form, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import os
 import sqlite3
 import psycopg2
 import uuid
-import pickle
 import cv2
 import numpy as np
 import urllib.request
 import tensorflow as tf
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
-from flask_cors import CORS
+from typing import Optional
 
-app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["http://localhost:4200", "http://127.0.0.1:4200"]}})  # nosec
-app.config["UPLOAD_FOLDER"] = "uploads"
-os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+# Cargar variables de entorno desde .env si existe en la raíz
+if os.path.exists(".env"):
+    with open(".env", "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                parts = line.split("=", 1)
+                if len(parts) == 2:
+                    key, val = parts
+                    os.environ[key.strip()] = val.strip().strip('"').strip("'")
+
+app = FastAPI(title="Detector de Manos API")
+
+# Configuración de CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200", "http://127.0.0.1:4200"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Montar archivos estáticos y plantillas
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
 # Cargar el modelo MobileNet nativo de Keras (.keras)
 modelo = tf.keras.models.load_model("mobilenet_manos_model.keras")
@@ -27,21 +55,13 @@ except Exception as e:
 
 # Preprocesamiento EXACTO para MobileNet
 def extract_features(image_path: str) -> np.ndarray:
-    # 1. Leer imagen en color BGR
     img = cv2.imread(image_path)
     if img is None:
         raise ValueError("No se pudo leer la imagen. Usa JPG/PNG/WEBP/BMP.")
-
-    # 2. Convertir BGR a RGB
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-    # 3. Redimensionar a (224, 224) para MobileNet
     img = cv2.resize(img, (224, 224))   
-    
-    # 4. Preprocesamiento específico de MobileNetV2 (-1 a 1)
     img_array = np.expand_dims(img, axis=0) # Shape: (1, 224, 224, 3)
     img_preprocessed = preprocess_input(img_array)
-    
     return img_preprocessed
 
 # --- CONFIGURACIÓN Y FUNCIONES DE BASE DE DATOS (Soporte Híbrido: SQLite y PostgreSQL/Supabase) ---
@@ -173,81 +193,77 @@ def db_get_stats():
         return {
             "total": 0,
             "accuracy": "0%",
-            "class_counts": {"Abierta": 0, "Cerrada": 0, CLASS_UNSURE: 0}
+            "class_counts": {"Abierta": 0, "Cerrada": 0, "No seguro": 0}
         }
 
-# --- RUTAS DE FLASK ---
+# --- RUTAS DE FASTAPI ---
 
-@app.route("/", methods=["GET"])
-def home():
-    return render_template("index.html")
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
-@app.route("/stats", methods=["GET"])
+@app.get("/stats")
 def stats():
-    stats_data = db_get_stats()
-    return jsonify(stats_data)
+    return db_get_stats()
 
-@app.route("/feedback", methods=["POST"])
-def feedback():
+class FeedbackRequest(BaseModel):
+    id: str
+    is_correct: bool
+    corrected_label: Optional[str] = None
+
+@app.post("/feedback")
+def feedback(data: FeedbackRequest):
     try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "Petición JSON vacía"}), 400
-            
-        pred_id = data.get("id")
-        is_correct = data.get("is_correct")
-        corrected_label = data.get("corrected_label")
-        
-        if not pred_id:
-            return jsonify({"error": "Falta el ID de predicción"}), 400
-            
-        db_update_feedback(pred_id, is_correct, corrected_label)
-        return jsonify({"status": "success", "message": "Feedback registrado"})
+        db_update_feedback(data.id, data.is_correct, data.corrected_label)
+        return {"status": "success", "message": "Feedback registrado"}
     except Exception as e:
-        print("Error en /feedback:", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
-@app.route("/predict", methods=["POST"])
-def predict():
+@app.post("/predict")
+async def predict(
+    image: Optional[UploadFile] = File(None),
+    image_url: Optional[str] = Form(None)
+):
     pred_id = str(uuid.uuid4())
+    path = None
     
     # 1. Comprobar si se envió una URL o archivo
     try:
         # Comprobar si se envió una URL
-        if "image_url" in request.form and request.form["image_url"].strip() != "":
-            image_url = request.form["image_url"].strip()
+        if image_url and image_url.strip() != "":
+            url_str = image_url.strip()
             # Añadir headers para simular un navegador real
             req = urllib.request.Request(
-                image_url, 
+                url_str, 
                 data=None, 
                 headers={
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
                 }
             )
-            ext = os.path.splitext(image_url)[1].lower()
+            ext = os.path.splitext(url_str)[1].lower()
             if ext not in [".jpg", ".jpeg", ".png", ".webp", ".bmp"]:
                 ext = ".jpg"
             filename = f"{uuid.uuid4().hex}{ext}"
-            path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            path = os.path.join(UPLOAD_FOLDER, filename)
             with urllib.request.urlopen(req, timeout=10) as response, open(path, 'wb') as out_file:
-                data = response.read()
-                out_file.write(data)
+                out_file.write(response.read())
         
         # Comprobar si se envió un archivo local
-        elif "image" in request.files and request.files["image"].filename.strip() != "":
-            file = request.files["image"]
-            ext = os.path.splitext(file.filename)[1].lower()
+        elif image and image.filename.strip() != "":
+            ext = os.path.splitext(image.filename)[1].lower()
             if ext not in [".jpg", ".jpeg", ".png", ".webp", ".bmp"]:
-                return jsonify({"error": "Formato no soportado. Usa JPG/PNG/WEBP/BMP."}), 400
+                return JSONResponse(status_code=400, content={"error": "Formato no soportado. Usa JPG/PNG/WEBP/BMP."})
             filename = f"{uuid.uuid4().hex}{ext}"
-            path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-            file.save(path)
+            path = os.path.join(UPLOAD_FOLDER, filename)
+            contents = await image.read()
+            with open(path, "wb") as f:
+                f.write(contents)
         else:
-            return jsonify({"error": "No se envió ninguna imagen ni URL."}), 400
+            return JSONResponse(status_code=400, content={"error": "No se envió ninguna imagen ni URL."})
             
     except Exception as e:
         print("ERROR OBTENIENDO IMAGEN:", e)
-        return jsonify({"error": "No se pudo obtener la imagen correctamente."}), 400
+        return JSONResponse(status_code=400, content={"error": "No se pudo obtener la imagen correctamente."})
 
     # 2. Hacer la inferencia del modelo
     try:
@@ -263,23 +279,24 @@ def predict():
         if conf < threshold:
             classification = CLASS_UNSURE
             db_insert_prediction(pred_id, classification, conf, path)
-            return jsonify({
+            return {
                 "id": pred_id,
                 "classification": classification,
                 "confidence": conf,
                 "message": "Toma otra foto con mejor luz y fondo simple."
-            })
+            }
 
         db_insert_prediction(pred_id, classification, conf, path)
-        return jsonify({
+        return {
             "id": pred_id,
             "classification": classification,
             "confidence": conf
-        })
+        }
 
     except Exception as e:
         print("ERROR EN /predict:", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=5000)
