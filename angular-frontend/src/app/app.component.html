@@ -1,25 +1,39 @@
-<main class="container">
-  <h1>Detector de Manos (Angular)</h1>
+<!-- Header Banner -->
+<app-header></app-header>
 
-  <section class="card">
-    <h2>Archivo</h2>
-    <input type="file" accept="image/*" (change)="onFileSelected($event)" />
-    <button (click)="predictByFile()" [disabled]="loading">Predecir archivo</button>
-  </section>
+<div class="container">
+  <div class="row">
+    <!-- Columna Izquierda: Carga e Imagen (Uploader) -->
+    <div class="col-lg-7 mb-4">
+      <app-image-uploader 
+        [loading]="loading" 
+        [error]="error"
+        (predict)="onPredict($event)" 
+        (cleared)="onCleared()">
+      </app-image-uploader>
+    </div>
 
-  <section class="card">
-    <h2>URL</h2>
-    <input type="url" [(ngModel)]="imageUrl" placeholder="https://ejemplo.com/imagen.jpg" />
-    <button (click)="predictByUrl()" [disabled]="loading">Predecir URL</button>
-  </section>
+    <!-- Columna Derecha: Resultados, Historial y Estadísticas -->
+    <div class="col-lg-5 mb-4">
+      <!-- Tarjeta de Resultados -->
+      <app-prediction-result 
+        [result]="result" 
+        [sourceInfo]="sourceInfo"
+        (feedback)="onFeedback($event)">
+      </app-prediction-result>
 
-  <section class="card" *ngIf="result">
-    <h2>Resultado</h2>
-    <p><strong>Clasificación:</strong> {{ result.classification }}</p>
-    <p><strong>Confianza:</strong> {{ result.confidence }}</p>
-    <p *ngIf="result.message"><strong>Nota:</strong> {{ result.message }}</p>
-    <p *ngIf="result.error"><strong>Error:</strong> {{ result.error }}</p>
-  </section>
+      <!-- Panel de Estadísticas e Historial de Sesión -->
+      <app-session-stats 
+        [stats]="historicalStats" 
+        [history]="history">
+      </app-session-stats>
+    </div>
+  </div>
+</div>
 
-  <p class="error" *ngIf="error">{{ error }}</p>
-</main>
+<!-- Footer -->
+<footer class="bg-light text-center py-3 mt-5 border-top text-muted small">
+  <div class="container">
+    <p class="mb-0">&copy; 2026 Detector de Manos IA. Todos los derechos reservados.</p>
+  </div>
+</footer>

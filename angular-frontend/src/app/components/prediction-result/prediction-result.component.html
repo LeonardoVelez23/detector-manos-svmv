@@ -1,0 +1,86 @@
+<div *ngIf="result" class="card border-0 shadow-sm mb-4 bg-gradient-light overflow-hidden animate-fade-up">
+  <div class="card-header text-white pt-4 px-4 pb-3" 
+    [style.background]="result.classification === 'Abierta' ? 'var(--emerald-gradient)' : (result.classification === 'Cerrada' ? 'var(--indigo-gradient)' : 'var(--amber-gradient)')">
+    <h2 class="card-title h5 fw-bold mb-1 text-white">Resultado de Predicción</h2>
+    <span class="badge bg-white fw-bold small"
+      [style.color]="result.classification === 'Abierta' ? '#059669' : (result.classification === 'Cerrada' ? '#4f46e5' : '#d97706')">
+      Procesado con éxito
+    </span>
+  </div>
+  <div class="card-body p-4">
+    <!-- Clasificación Grande -->
+    <div class="text-center my-3">
+      <span class="text-muted small d-block mb-1 text-uppercase fw-bold tracking-wider">Mano Detectada</span>
+      <span class="h2 fw-black d-block mb-2"
+        [style.color]="result.classification === 'Abierta' ? '#059669' : (result.classification === 'Cerrada' ? '#4f46e5' : '#d97706')">
+        {{ result.classification === 'No seguro' ? '⚠️ Indeterminado' : (result.classification === 'Abierta' ? '🖐️ Mano Abierta' : '✊ Mano Cerrada') }}
+      </span>
+    </div>
+
+    <!-- Barra de Confianza -->
+    <div class="mb-4">
+      <div class="d-flex justify-content-between mb-1 small fw-bold">
+        <span>Nivel de Confianza</span>
+        <span [style.color]="result.classification === 'Abierta' ? '#059669' : (result.classification === 'Cerrada' ? '#4f46e5' : '#d97706')">
+          {{ result.confidence ? Math.round(result.confidence * 100) : 0 }}%
+        </span>
+      </div>
+      <div class="progress" style="height: 18px; border-radius: 9px;">
+        <div 
+          class="progress-bar progress-bar-striped progress-bar-animated" 
+          role="progressbar" 
+          [style.width.%]="result.confidence ? Math.round(result.confidence * 100) : 0"
+          [style.background]="result.classification === 'Abierta' ? 'linear-gradient(90deg, #10b981, #34d399)' : (result.classification === 'Cerrada' ? 'linear-gradient(90deg, #4f46e5, #818cf8)' : 'linear-gradient(90deg, #f59e0b, #fbbf24)')"
+          [attr.aria-valuenow]="result.confidence ? Math.round(result.confidence * 100) : 0" 
+          aria-valuemin="0" 
+          aria-valuemax="100">
+        </div>
+      </div>
+    </div>
+
+    <!-- Detalles Extras -->
+    <div class="bg-light rounded p-3 mb-4 border-start border-4"
+      [style.border-color]="result.classification === 'Abierta' ? '#059669' : (result.classification === 'Cerrada' ? '#4f46e5' : '#d97706')">
+      <div class="row g-2 small text-muted">
+        <div class="col-6 text-end fw-bold">Clasificación:</div>
+        <div class="col-6 fw-semibold text-dark">{{ result.classification }}</div>
+        <div class="col-6 text-end fw-bold">Confianza:</div>
+        <div class="col-6 fw-semibold text-dark">{{ result.confidence }}</div>
+        <div *ngIf="sourceInfo" class="col-6 text-end fw-bold">Fuente:</div>
+        <div *ngIf="sourceInfo" class="col-6 fw-semibold text-dark text-truncate">{{ sourceInfo }}</div>
+        <div *ngIf="result.message" class="col-12 mt-2 pt-2 border-top text-center text-warning fw-semibold">
+          💡 {{ result.message }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Sistema de Feedback -->
+    <div class="border-top pt-3 text-center">
+      <div *ngIf="!feedbackSubmitted">
+        <p class="small fw-semibold text-secondary mb-2">¿Es correcto el resultado?</p>
+        <div class="d-flex gap-2 justify-content-center">
+          <button class="btn btn-sm btn-success px-4 fw-bold shadow-sm" (click)="sendFeedback(true)">✅ Sí</button>
+          <button class="btn btn-sm btn-danger px-4 fw-bold shadow-sm" (click)="sendFeedback(false)">❌ No</button>
+        </div>
+
+        <!-- Corrección Manual -->
+        <div *ngIf="showCorrectionInput" class="mt-3 p-3 bg-light rounded border animate-fade-up">
+          <p class="small text-muted mb-2">Ingresa la clasificación correcta:</p>
+          <div class="input-group input-group-sm">
+            <input 
+              type="text" 
+              class="form-control" 
+              placeholder="Ej. Abierta, Cerrada, Borrosa" 
+              [(ngModel)]="manualLabel" />
+            <button class="btn btn-success fw-bold" (click)="submitCorrection()">Enviar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensaje de Feedback enviado -->
+      <div *ngIf="feedbackSubmitted" class="alert alert-success border-0 small fw-bold py-2 mb-0 shadow-sm animate-fade-up">
+        {{ feedbackMessage }}
+      </div>
+    </div>
+  </div>
+</div>
